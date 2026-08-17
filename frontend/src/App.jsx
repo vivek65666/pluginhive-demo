@@ -1,40 +1,39 @@
-import React, { useState, useEffect } from 'react';
-
-// Temporary local API URL (We will update this after deploying backend to AWS)
-const API_URL = "http://localhost:5000"; 
+import React, { useState } from 'react';
 
 export default function App() {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState([
+    { id: 1, name: 'Sample Item 1', price: 29.99, stock: 15 },
+    { id: 2, name: 'Sample Item 2', price: 49.99, stock: 8 }
+  ]);
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('');
 
-  const fetchProducts = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/products`);
-      const data = await res.json();
-      setProducts(data);
-    } catch (err) {
-      console.error("Error fetching data:", err);
-    }
-  };
-
-  useEffect(() => { fetchProducts(); }, []);
-
-  const handleAdd = async (e) => {
+  const handleAdd = (e) => {
+    // 1. Prevent default form reload behavior
     e.preventDefault();
-    await fetch(`${API_URL}/api/products`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, price, stock })
-    });
-    setName(''); setPrice(''); setStock('');
-    fetchProducts();
+
+    if (!name || !price || !stock) return;
+
+    // 2. Create new item object
+    const newItem = {
+      id: Date.now(),
+      name: name.trim(),
+      price: parseFloat(price),
+      stock: parseInt(stock, 10)
+    };
+
+    // 3. Update React state locally
+    setProducts((prev) => [...prev, newItem]);
+
+    // 4. Clear input fields
+    setName('');
+    setPrice('');
+    setStock('');
   };
 
-  const handleDelete = async (id) => {
-    await fetch(`${API_URL}/api/products/${id}`, { method: 'DELETE' });
-    fetchProducts();
+  const handleDelete = (id) => {
+    setProducts((prev) => prev.filter((p) => p.id !== id));
   };
 
   return (
@@ -43,17 +42,35 @@ export default function App() {
       <p><strong>Stack:</strong> React.js, Node.js, Express, AWS</p>
 
       <form onSubmit={handleAdd} style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
-        <input placeholder="Name" value={name} onChange={e => setName(e.target.value)} required />
-        <input placeholder="Price" type="number" value={price} onChange={e => setPrice(e.target.value)} required />
-        <input placeholder="Stock" type="number" value={stock} onChange={e => setStock(e.target.value)} required />
+        <input 
+          placeholder="Name" 
+          value={name} 
+          onChange={(e) => setName(e.target.value)} 
+          required 
+        />
+        <input 
+          placeholder="Price" 
+          type="number" 
+          step="0.01" 
+          value={price} 
+          onChange={(e) => setPrice(e.target.value)} 
+          required 
+        />
+        <input 
+          placeholder="Stock" 
+          type="number" 
+          value={stock} 
+          onChange={(e) => setStock(e.target.value)} 
+          required 
+        />
         <button type="submit">Add Item</button>
       </form>
 
       <ul style={{ listStyle: 'none', padding: 0 }}>
-        {products.map(p => (
+        {products.map((p) => (
           <li key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', borderBottom: '1px solid #ccc' }}>
             <span><strong>{p.name}</strong> - ${p.price} ({p.stock} in stock)</span>
-            <button onClick={() => handleDelete(p.id)}>Delete</button>
+            <button type="button" onClick={() => handleDelete(p.id)}>Delete</button>
           </li>
         ))}
       </ul>
